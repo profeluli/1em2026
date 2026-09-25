@@ -1,13 +1,260 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laboratório de Química em Realidade Aumentada (WebAR)</title>
+  
+  <!-- Biblioteca Google Model-Viewer para WebAR -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
-    <body>
-teste para upload da extensão 
-    </body>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      padding: 1rem;
+      background-color: #1e293b;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      color: #38bdf8;
+    }
+
+    p.subtitle {
+      margin: 0.3rem 0 0 0;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    /* Container Principal do Viewer 3D */
+    .ar-container {
+      width: 95%;
+      max-width: 600px;
+      height: 420px;
+      margin: 1rem 0;
+      background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+      border-radius: 16px;
+      border: 1px solid #334155;
+      position: relative;
+      overflow: hidden;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Botão de Ativação do AR */
+    .ar-button {
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-weight: bold;
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+
+    /* Painel de Controle de Moléculas e Óxidos */
+    .controls-panel {
+      width: 95%;
+      max-width: 600px;
+      background: #1e293b;
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      color: #f1f5f9;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px;
+      background-color: #334155;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .btn.active {
+      background-color: #0284c7;
+      border-color: #38bdf8;
+    }
+
+    /* Indicador Visual de pH Simulado */
+    .ph-indicator-box {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      background-color: #0f172a;
+      border-left: 6px solid #a855f7;
+      transition: all 0.3s ease;
+    }
+
+    #info-text {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Química em Realidade Aumentada</h1>
+    <p class="subtitle">Investigação de Ácidos, Bases e Óxidos no Cotidiano</p>
+  </header>
+
+  <!-- Container de Projeção 3D / AR -->
+  <div class="ar-container">
+    <model-viewer 
+      id="molecule-viewer"
+      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
+      alt="Modelo 3D da Molécula"
+      ar 
+      ar-modes="webxr scene-viewer quick-look" 
+      camera-controls 
+      auto-rotate 
+      shadow-intensity="1">
+      
+      <button slot="ar-button" class="ar-button">
+        📱 Ver na Sala (AR)
+      </button>
+    </model-viewer>
+  </div>
+
+  <!-- Painel Interativo de Controle para os Alunos -->
+  <div class="controls-panel">
+    <div class="section-title">1. Selecione a Molécula / Óxido:</div>
+    <div class="btn-group">
+      <button class="btn active" onclick="selectMolecule('co2', this)">CO₂ (Dióxido de Carbono)</button>
+      <button class="btn" onclick="selectMolecule('cao', this)">CaO (Óxido de Cálcio / Cal)</button>
+      <button class="btn" onclick="selectMolecule('so3', this)">SO₃ (Trióxido de Enxofre)</button>
+    </div>
+
+    <div class="section-title">2. Teste de pH em Solução Aquosa (Repolho Roxo):</div>
+    <div class="btn-group">
+      <button class="btn" onclick="testPH('acid')">🔴 Testar em Meio Ácido (pH < 7)</button>
+      <button class="btn" onclick="testPH('neutral')">🟣 Meio Neutro (pH = 7)</button>
+      <button class="btn" onclick="testPH('base')">🟢 Testar em Meio Básico (pH > 7)</button>
+    </div>
+
+    <div id="ph-box" class="ph-indicator-box">
+      <div id="info-text">
+        <strong>Molécula selecionada: CO₂</strong><br>
+        • <strong>Classificação:</strong> Óxido Ácido (Anidrido).<br>
+        • <strong>Reação com Água:</strong> CO₂ + H₂O → H₂CO₃ (Ácido Carbônico).<br>
+        • <strong>Efeito no indicador:</strong> Torna o extrato de repolho roxo rosa/vermelho.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mapeamento das Informações das Moléculas
+    const data = {
+      co2: {
+        title: "CO₂ (Dióxido de Carbono)",
+        class: "Óxido Ácido (Anidrido)",
+        reaction: "CO₂ + H₂O → H₂CO₃ (Ácido Carbônico)",
+        phDefault: "acid",
+        info: "Ao assoprar na água ou na queima de combustíveis, o CO₂ reage com a água formando um ácido fraco. Responsável pela acidificação de bebidas e da chuva de forma natural."
+      },
+      cao: {
+        title: "CaO (Óxido de Cálcio / Cal Viva)",
+        class: "Óxido Básico",
+        reaction: "CaO + H₂O → Ca(OH)₂ (Hidróxido de Cálcio)",
+        phDefault: "base",
+        info: "Utilizado na calagem do solo agrícola para neutralizar a acidez excessiva. Ao reagir com a água, produz uma base forte."
+      },
+      so3: {
+        title: "SO₃ (Trióxido de Enxofre)",
+        class: "Óxido Ácido",
+        reaction: "SO₃ + H₂O → H₂SO₄ (Ácido Sulfúrico)",
+        phDefault: "acid",
+        info: "Proveniente do refinamento do petróleo e indústrias. Reage intensamente com a umidade da atmosfera gerando a chuva ácida nociva ao meio ambiente."
+      }
+    };
+
+    let currentMolecule = 'co2';
+
+    function selectMolecule(key, btn) {
+      currentMolecule = key;
+      document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const item = data[key];
+      testPH(item.phDefault);
+    }
+
+    function testPH(type) {
+      const box = document.getElementById('ph-box');
+      const info = document.getElementById('info-text');
+      const item = data[currentMolecule];
+
+      if (type === 'acid') {
+        box.style.borderLeftColor = "#ef4444";
+        box.style.backgroundColor = "#450a0a";
+        info.innerHTML = `<strong>${item.title} — Meio Ácido (pH < 7)</strong><br>
+          • <strong>Classificação:</strong> ${item.class}<br>
+          • <strong>Reação:</strong> ${item.reaction}<br>
+          • <strong>Cor do Repolho Roxo:</strong> Rosa / Vermelho.<br>
+          • <strong>Detalhe:</strong> ${item.info}`;
+      } else if (type === 'base') {
+        box.style.borderLeftColor = "#22c55e";
+        box.style.backgroundColor = "#052e16";
+        info.innerHTML = `<strong>${item.title} — Meio Básico (pH > 7)</strong><br>
+          • <strong>Classificação:</strong> ${item.class}<br>
+          • <strong>Reação:</strong> ${item.reaction}<br>
+          • <strong>Cor do Repolho Roxo:</strong> Verde / Azul-Esverdeado.<br>
+          • <strong>Detalhe:</strong> ${item.info}`;
+      } else {
+        box.style.borderLeftColor = "#a855f7";
+        box.style.backgroundColor = "#2e1065";
+        info.innerHTML = `<strong>${item.title} — Meio Neutro (pH = 7)</strong><br>
+          • <strong>Cor do Repolho Roxo:</strong> Roxo / Violeta (Sem alteração).<br>
+          • <strong>Observação:</strong> Água pura sem dissolução prévia do óxido.`;
+      }
+    }
+  </script>
+</body>
 </html>
